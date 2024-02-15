@@ -30,6 +30,8 @@ dependencies {
 	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3'
 	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
 	implementation 'commons-io:commons-io:2.15.1'
+	implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.14.2'
+
 
 	compileOnly 'org.projectlombok:lombok'
 
