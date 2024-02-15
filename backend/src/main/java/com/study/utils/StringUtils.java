@@ -1,5 +1,7 @@
 package com.study.utils;
 
+import com.study.condition.SearchCondition;
+
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -41,7 +43,25 @@ public class StringUtils {
         return Timestamp.valueOf(endOfDay);
     }
 
+    /**
+     * 공백과 null check
+     * @param str
+     * @return
+     */
     public static boolean isNull(String str){
         return "".equals(str) || (null == str);
     }
+
+    /**
+     * 처음 검색 조건에서 공백으로 넘어오는거 체크
+     * @param searchCondition
+     * @return
+     */
+    public static boolean isSearchConditionNull(SearchCondition searchCondition){
+        if(isNull(searchCondition.getSearchText()) || isNull(searchCondition.getEndDate())|| isNull(searchCondition.getStartDate())){
+            return true;
+        }
+        return false;
+    }
+
 }
