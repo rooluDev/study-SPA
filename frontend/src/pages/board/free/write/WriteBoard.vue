@@ -131,7 +131,7 @@ export default {
         });
         goToList();
       } catch (error) {
-        alert('something is wrong');
+        alert(error.response.data);
       }
     };
 

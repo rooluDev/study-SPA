@@ -168,7 +168,7 @@ export default {
         });
         return true;
       } catch (error) {
-        alert('password incorrect');
+        alert(error.response.data);
         password.value = '';
         return false;
       }
