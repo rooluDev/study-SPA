@@ -1,6 +1,9 @@
 package com.study.validate;
 
 import com.study.dto.BoardDTO;
+import com.study.exception.IllegalLengthException;
+import com.study.exception.NoSelectedException;
+import com.study.exception.PasswordIncorrectException;
 import org.springframework.util.StringUtils;
 
 import java.util.regex.Matcher;
@@ -10,98 +13,105 @@ import java.util.regex.Pattern;
 /**
  * 유효성 검증
  */
-// TODO : Exception
 public class Validator {
 
     /**
      * Board 생성 form 유효성 검증
+     *
      * @param boardDTO
      * @param passwordCheck
      * @return
      */
-    public static boolean validateBoardInput(BoardDTO boardDTO,String passwordCheck){
-        if (!validateCategory(boardDTO.getCategoryId())
-                && validateContent(boardDTO.getContent())
-                && validatePassword(boardDTO.getPassword())
-                && validatePasswordEquals(boardDTO.getPassword(), passwordCheck)
-                && validateTitle(boardDTO.getTitle())
-                && validateUserName(boardDTO.getUserName())) {
-            throw new IllegalArgumentException("입력 오류");
-        }
-        return true;
+    public static void validateBoardInput(BoardDTO boardDTO, String passwordCheck) throws Exception {
+        validateCategory(boardDTO.getCategoryId());
+        validateContent(boardDTO.getContent());
+        validatePassword(boardDTO.getPassword());
+        validatePasswordEquals(boardDTO.getPassword(), passwordCheck);
+        validateTitle(boardDTO.getTitle());
+        validateUserName(boardDTO.getUserName());
     }
 
     /**
      * 카테고리 필수 선택
+     *
      * @param categoryId
      * @return
      */
-    private static boolean validateCategory(Long categoryId){
-        if(categoryId > 0){
-            return true;
+    private static void validateCategory(Long categoryId) throws Exception {
+        if (categoryId < 1) {
+            throw new NoSelectedException("No category selected");
         }
-
-        return false;
     }
 
     /**
      * userName null 체크, 글자 길이 체크
+     *
      * @param userName
      * @return
      */
-    private static boolean validateUserName(String userName){
-        if(StringUtils.isEmpty(userName)){
-            return false;
+    private static void validateUserName(String userName) throws Exception {
+        if (StringUtils.isEmpty(userName)) {
+            throw new NullPointerException("UserName is Empty");
+        } else if (!(userName.length() > 2 && userName.length() < 5)) {
+            throw new IllegalLengthException("UserName length invalidate");
         }
-        return userName.length() >= 3 || userName.length() < 5;
     }
 
     /**
      * password 4글자 이상, 16자 미만, 영문 / 숫자 / 특수문자 포함
+     *
      * @param password
      * @return
      */
-    private static boolean validatePassword(String password){
+    private static void validatePassword(String password) throws Exception {
         String regex = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{4,16}$";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(password);
-        return matcher.matches();
+        if (!matcher.matches()) {
+            throw new PasswordIncorrectException("Password regex Invalidate");
+        }
     }
 
     /**
      * password, passwordCheck 동일한지
+     *
      * @param password
      * @param passwordCheck
      * @return
      */
-    private static boolean validatePasswordEquals(String password, String passwordCheck){
-        if(StringUtils.isEmpty(password) && StringUtils.isEmpty(passwordCheck)){
-            return false;
+    private static void validatePasswordEquals(String password, String passwordCheck) throws Exception {
+        if (StringUtils.isEmpty(password) && StringUtils.isEmpty(passwordCheck)) {
+            throw new NullPointerException("Password is empty");
+        } else if (!password.equals(passwordCheck)) {
+            throw new PasswordIncorrectException("Password incorrect");
         }
-        return password.equals(passwordCheck);
     }
 
     /**
      * title 4글자 이상, 100글자 미만
+     *
      * @param title
      * @return
      */
-    private static boolean validateTitle(String title){
-        if(StringUtils.isEmpty(title)){
-            return false;
+    private static void validateTitle(String title) throws Exception {
+        if (StringUtils.isEmpty(title)) {
+            throw new NullPointerException("Title is Empty");
+        } else if (!(title.length() > 3 && title.length() < 100)) {
+            throw new IllegalLengthException("Title length is invalidate");
         }
-        return title.length() < 4 && title.length() >= 100;
     }
 
     /**
      * content 4글자 2000글자 미만
+     *
      * @param content
      * @return
      */
-    private static boolean validateContent(String content){
-        if(StringUtils.isEmpty(content)){
-            return false;
+    private static void validateContent(String content) throws Exception {
+        if (StringUtils.isEmpty(content)) {
+            throw new NullPointerException("Content is Empty");
+        } else if (!(content.length() > 3 && content.length() < 2000)) {
+            throw new IllegalLengthException("Content length is invalidate");
         }
-        return content.length() < 4 && content.length() >= 2000;
     }
 }
