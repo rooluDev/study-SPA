@@ -88,7 +88,11 @@ public class FileService {
      * @param fileId
      * @return
      */
-    public FileDTO findOne(Long fileId){
-        return fileMapper.findById(fileId);
+    public FileDTO findOne(Long fileId) throws Exception{
+        FileDTO fileDTO = fileMapper.findById(fileId);
+        if(fileDTO == null){
+            throw new FileNotFoundException("No file in DB");
+        }
+        return fileDTO;
     }
 }

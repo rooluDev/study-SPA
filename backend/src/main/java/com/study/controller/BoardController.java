@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.study.condition.BoardSelectCondition;
 import com.study.condition.SearchCondition;
 import com.study.dto.BoardDTO;
+import com.study.exception.BoardNotFoundException;
 import com.study.returntpye.BoardSearchConditionCount;
 import com.study.service.BoardService;
 import com.study.service.CategoryService;
@@ -14,6 +15,7 @@ import com.study.service.FileService;
 import com.study.utils.EncryptUtils;
 import com.study.utils.StringUtils;
 import com.study.validate.Validator;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +29,7 @@ import java.io.IOException;
  */
 @RestController
 @RequestMapping("/api")
+@Slf4j
 public class BoardController {
     private final BoardService boardService;
     private final CategoryService categoryService;
@@ -50,8 +53,8 @@ public class BoardController {
      */
     @GetMapping("/boards")
     public ResponseEntity<BoardSearchConditionCount> getBoardList(SearchCondition searchCondition, @RequestParam(defaultValue = "1") int pageNum) {
-        // TODO : null check and SearchCondition 설정
-        if (StringUtils.isNull(searchCondition.getSearchText())) {
+        // 처음 /boards/free/list 검색 조건 설정
+        if (StringUtils.isSearchConditionNull(searchCondition)) {
             searchCondition = new SearchCondition();
         }
 
@@ -76,7 +79,6 @@ public class BoardController {
                 .countRow(boardService.getBoardCount(boardSelectCondition))
                 .build();
 
-
         return new ResponseEntity<>(boardSearchConditionCount,HttpStatus.OK);
     }
 
@@ -88,10 +90,15 @@ public class BoardController {
      */
     @GetMapping("/board/{boardId}")
     public ResponseEntity<BoardDTO> getBoard(@PathVariable Long boardId) {
-        // 필요한 정보 요청
-        BoardDTO boardDTO = boardService.findBoard(boardId);
+        try {
+            // 필요한 정보 요청
+            BoardDTO boardDTO = boardService.findBoard(boardId);
+            return new ResponseEntity<>(boardDTO,HttpStatus.OK);
+        }catch (BoardNotFoundException e){
+            log.warn(e.getMessage());
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
 
-        return new ResponseEntity<>(boardDTO,HttpStatus.OK);
     }
 
     /**
@@ -113,28 +120,34 @@ public class BoardController {
                             @RequestParam("password") String password,
                             @RequestParam("passwordCheck") String passwordCheck,
                             @RequestParam("title") String title,
-                            @RequestParam("content") String content) throws IOException {
+                            @RequestParam("content") String content) {
+
         // 저장할 Board DTO 생성
         BoardDTO boardDTO = BoardDTO.builder()
                 .categoryId(categoryId)
                 .userName(userName)
-                .password(EncryptUtils.encryptPassword(password))
+                .password(password)
                 .title(title)
                 .content(content)
                 .build();
 
         // 유효성 검사
         try {
-            Validator.validateBoardInput(boardDTO, EncryptUtils.encryptPassword(passwordCheck));
-        } catch (IllegalArgumentException e) {
+            Validator.validateBoardInput(boardDTO, passwordCheck);
+        } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(),HttpStatus.UNAUTHORIZED);
         }
-
+        boardDTO.setPassword(EncryptUtils.encryptPassword(password));
         // DB에 board 저장
         boardService.addBoard(boardDTO);
 
         // File 저장
-        fileService.uploadFile(files, boardDTO.getBoardId());
+        try {
+            fileService.uploadFile(files, boardDTO.getBoardId());
+        }catch (IOException e){
+            log.error(e.getMessage());
+            return new ResponseEntity<>("File Upload Fail",HttpStatus.SERVICE_UNAVAILABLE);
+        }
         return new ResponseEntity<>("success",HttpStatus.OK);
     }
 
@@ -146,7 +159,7 @@ public class BoardController {
     @PatchMapping("/board/{boardId}/increase-views")
     public ResponseEntity<String> updateView(@PathVariable Long boardId) {
         boardService.increaseView(boardId);
-        return new ResponseEntity<>("String",HttpStatus.OK);
+        return new ResponseEntity<>("success",HttpStatus.OK);
     }
 
     /**
@@ -157,7 +170,7 @@ public class BoardController {
      * @return
      */
     @PostMapping("/board/{boardId}/check-password")
-    public ResponseEntity<String> checkPassword(@PathVariable Long boardId, @RequestBody String password) throws JsonProcessingException {
+    public ResponseEntity<String> checkPassword(@PathVariable Long boardId, @RequestBody String password) throws Exception {
         // boardId로 비밀번호 가져오기
         BoardDTO boardDTO = boardService.findBoard(boardId);
 
@@ -169,7 +182,7 @@ public class BoardController {
         // 비밀번호 확인
         password = EncryptUtils.encryptPassword(password);
         if (!boardDTO.getPassword().equals(password)) {
-            return new ResponseEntity<>("fail", HttpStatus.UNAUTHORIZED);
+            return new ResponseEntity<>("password incorrect", HttpStatus.UNAUTHORIZED);
         }
 
         return new ResponseEntity<>("success", HttpStatus.ACCEPTED);
@@ -198,25 +211,29 @@ public class BoardController {
      * @throws JsonProcessingException
      */
     @PutMapping("/board/{boardId}")
-    public ResponseEntity<String> updateBoard(@PathVariable Long boardId, @RequestBody String updateBoard) throws JsonProcessingException {
+    public ResponseEntity<String> updateBoard(@PathVariable Long boardId, @RequestBody String updateBoard){
         // JSON 파싱
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode = objectMapper.readTree(updateBoard);
-        String userName = jsonNode.get("userName").asText();
-        String title = jsonNode.get("title").asText();
-        String content = jsonNode.get("content").asText();
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonNode = objectMapper.readTree(updateBoard);
+            String userName = jsonNode.get("userName").asText();
+            String title = jsonNode.get("title").asText();
+            String content = jsonNode.get("content").asText();
 
-        // boardDTO 설정
-        BoardDTO board = BoardDTO.builder()
-                .boardId(boardId)
-                .userName(userName)
-                .title(title)
-                .content(content)
-                .build();
+            // boardDTO 설정
+            BoardDTO board = BoardDTO.builder()
+                    .boardId(boardId)
+                    .userName(userName)
+                    .title(title)
+                    .content(content)
+                    .build();
 
-        // 업데이트
-        boardService.updateBoard(board);
+            // 업데이트
+            boardService.updateBoard(board);
 
-        return new ResponseEntity<>("success",HttpStatus.OK);
+            return new ResponseEntity<>("success", HttpStatus.OK);
+        }catch (JsonProcessingException e){
+            return new ResponseEntity<>("JSON data parse",HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }

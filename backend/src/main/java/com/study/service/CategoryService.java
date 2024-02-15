@@ -1,6 +1,7 @@
 package com.study.service;
 
 import com.study.dto.CategoryDTO;
+import com.study.exception.CategoryNotFoundException;
 import com.study.mapper.CategoryMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,7 +33,11 @@ public class CategoryService {
      * @param categoryId
      * @return
      */
-    public CategoryDTO getCategory(Long categoryId){
-        return categoryMapper.findById(categoryId);
+    public CategoryDTO getCategory(Long categoryId) throws Exception{
+        CategoryDTO categoryDTO = categoryMapper.findById(categoryId);
+        if(categoryDTO == null){
+            throw new CategoryNotFoundException("No category in DB");
+        }
+        return categoryDTO;
     }
 }

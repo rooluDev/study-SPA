@@ -3,6 +3,7 @@ package com.study.controller;
 
 import com.study.dto.CategoryDTO;
 import com.study.service.CategoryService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api")
+@Slf4j
 public class CategoryController {
     private final CategoryService categoryService;
 
@@ -42,6 +44,12 @@ public class CategoryController {
      */
     @GetMapping("/category/{categoryId}")
     public ResponseEntity<CategoryDTO> getCategory(@PathVariable Long categoryId){
-        return new ResponseEntity<>(categoryService.getCategory(categoryId),HttpStatus.OK);
+        try {
+            CategoryDTO categoryDTO = categoryService.getCategory(categoryId);
+            return new ResponseEntity<>(categoryDTO,HttpStatus.OK);
+        }catch (Exception e){
+            log.error(e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }

@@ -3,6 +3,7 @@ package com.study.service;
 import com.study.condition.BoardSelectCondition;
 import com.study.dto.BoardCategoryNameDTO;
 import com.study.dto.BoardDTO;
+import com.study.exception.BoardNotFoundException;
 import com.study.mapper.BoardMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,8 +27,12 @@ public class BoardService {
      * @param boardId
      * @return
      */
-    public BoardDTO findBoard(long boardId){
-        return boardMapper.findById(boardId);
+    public BoardDTO findBoard(long boardId) throws BoardNotFoundException {
+        BoardDTO boardDTO = boardMapper.findById(boardId);
+        if(boardDTO == null){
+            throw new BoardNotFoundException("No board in DB");
+        }
+        return boardDTO;
     }
 
     /**
