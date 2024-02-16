@@ -1,7 +1,7 @@
 package com.study.service;
 
 import com.study.condition.BoardSelectCondition;
-import com.study.dto.BoardCategoryNameDTO;
+import com.study.dto.BoardCategoryFileDTO;
 import com.study.dto.BoardDTO;
 import com.study.exception.BoardNotFoundException;
 import com.study.mapper.BoardMapper;
@@ -40,7 +40,7 @@ public class BoardService {
      * @param boardSelectCondition
      * @return
      */
-    public List<BoardCategoryNameDTO> getBoardList(BoardSelectCondition boardSelectCondition){
+    public List<BoardCategoryFileDTO> getBoardList(BoardSelectCondition boardSelectCondition){
         return boardMapper.getBoardList(boardSelectCondition);
     }
 

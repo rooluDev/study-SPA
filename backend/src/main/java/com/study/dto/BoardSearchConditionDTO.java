@@ -1,7 +1,6 @@
-package com.study.returntpye;
+package com.study.dto;
 
 import com.study.condition.SearchCondition;
-import com.study.dto.BoardCategoryNameDTO;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,8 +13,7 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
-public class BoardSearchConditionCount {
-    private List<BoardCategoryNameDTO> boardList;
+public class BoardSearchConditionDTO {
+    private List<BoardCategoryFileDTO> boardList;
     private SearchCondition searchCondition;
-    private int countRow;
 }
