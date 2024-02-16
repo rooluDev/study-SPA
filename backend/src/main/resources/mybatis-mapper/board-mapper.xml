@@ -12,15 +12,17 @@
             board_id = #{boardId}
     </select>
 
-    <select id="getBoardList" parameterType="com.study.condition.BoardSelectCondition" resultType="com.study.dto.BoardCategoryNameDTO">
-        SELECT
+    <select id="getBoardList" parameterType="com.study.condition.BoardSelectCondition" resultType="com.study.dto.BoardCategoryFileDTO">
+        SELECT DISTINCT
             tb_category.category_name,tb_board.board_id, tb_board.title,
             tb_board.user_name,tb_board.views,tb_board.created_at,
-            tb_board.edited_at
+            tb_board.edited_at, tb_file.board_id as boardIdInFile
         FROM
             tb_board
-        JOIN
+        LEFT JOIN
             tb_category ON tb_board.category_id = tb_category.category_id
+        LEFT JOIN
+            tb_file ON tb_board.board_id = tb_file.board_id
         WHERE
             tb_board.created_at BETWEEN #{startDate} AND #{endDate}
             <if test="searchText != null and searchText != ''">
