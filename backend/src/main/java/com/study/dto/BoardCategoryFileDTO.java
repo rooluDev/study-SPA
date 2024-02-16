@@ -12,7 +12,7 @@ import java.sql.Timestamp;
 @Getter
 @Setter
 @Builder
-public class BoardCategoryNameDTO {
+public class BoardCategoryFileDTO {
     private String categoryName;
     private Long boardId;
     private String title;
@@ -20,6 +20,7 @@ public class BoardCategoryNameDTO {
     private Long views;
     private Timestamp createdAt;
     private Timestamp editedAt;
+    private Long boardIdInFile;
 }
 
 
