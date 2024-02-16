@@ -3,9 +3,9 @@ package com.study.service;
 import com.study.dto.FileDTO;
 import com.study.mapper.FileMapper;
 import com.study.utils.MultipartFileUtils;
-import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,8 +18,9 @@ import java.util.UUID;
  */
 @Service
 public class FileService {
+    @Value("#{file['file.path']}")
+    private String REAL_PATH;
     private final FileMapper fileMapper;
-    static final String REAL_PATH = "/Users/user/upload/";
 
     @Autowired
     public FileService(FileMapper fileMapper) {
