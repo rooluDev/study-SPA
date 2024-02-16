@@ -23,6 +23,7 @@
   <table>
     <tr>
       <th>카테고리</th>
+      <th>File</th>
       <th>제목</th>
       <th>작성자</th>
       <th>조회수</th>
@@ -31,6 +32,8 @@
     </tr>
     <tr v-for="board in boardList" :key="board.boardId">
       <td>{{ board.categoryName }}</td>
+      <td v-if="board.boardIdInFile">O</td>
+      <td v-else></td>
       <td style="cursor: pointer" @click="goToView(board.boardId)">
         {{ board.title }}
       </td>
@@ -70,14 +73,15 @@ export default {
     const endDate = ref(useRoute().query.endDate);
     const searchText = ref(useRoute().query.searchText);
     const selectedCategoryId = ref(useRoute().query.category);
-
     // 현제 페이지
     const currentPageNum = ref(useRoute().query.pageNum);
-    // TODO : 페이지네이션 front or back
     // 페이지네이션
-    const pageSize = 2;
+    const pageSize = ref(-1);
     const numOfPages = computed(() => {
-      return Math.ceil(boardCount.value / pageSize);
+      if (pageSize.value < 0) {
+        return;
+      }
+      return Math.ceil(boardCount.value / pageSize.value);
     });
 
     /**
@@ -89,17 +93,7 @@ export default {
       // 현재 페이지 설정
       currentPageNum.value = page;
       // 처음 요청 시 데이터 설정
-      if (
-        startDate.value ||
-        endDate.value ||
-        searchText.value ||
-        selectedCategoryId.value
-      ) {
-        startDate.value = '';
-        endDate.value = '';
-        searchText.value = '';
-        selectedCategoryId.value = -1;
-      }
+      initSearchCondition();
 
       try {
         // board 요청
@@ -112,9 +106,40 @@ export default {
         endDate.value = res.data.searchCondition.endDate;
         selectedCategoryId.value = res.data.searchCondition.categoryId;
         searchText.value = res.data.searchCondition.searchText;
-        boardCount.value = res.data.countRow;
       } catch (error) {
         // 에러
+        alert('something is wrong');
+        return;
+      }
+    };
+
+    /**
+     * 페이지네이션 상관없이 게시물 총 수 GET요청
+     * @returns {Promise<void>}
+     */
+    const getBoardsCount = async () => {
+      // 처음 요청 시
+      initSearchCondition();
+      try {
+        const res = await axios.get(
+          `/api/boards/count?startDate=${startDate.value}&endDate=${endDate.value}&categoryId=${selectedCategoryId.value}&searchText=${searchText.value}`,
+        );
+        boardCount.value = res.data;
+      } catch (error) {
+        alert('something is wrong');
+        return;
+      }
+    };
+
+    /**
+     * pageSize GET요청
+     * @returns {Promise<void>}
+     */
+    const getPageSize = async () => {
+      try {
+        const res = await axios.get('/api/pageSize');
+        pageSize.value = res.data;
+      } catch (error) {
         alert('something is wrong');
         return;
       }
@@ -142,6 +167,23 @@ export default {
      */
     const parseStringFormat = (timestamp, format) => {
       return moment(timestamp).format(format);
+    };
+
+    /**
+     * 처음 요청 시 param이 아무것도 없을 때
+     */
+    const initSearchCondition = () => {
+      if (
+        startDate.value == undefined ||
+        endDate.value == undefined ||
+        searchText.value == undefined ||
+        selectedCategoryId.value == undefined
+      ) {
+        startDate.value = '';
+        endDate.value = '';
+        searchText.value = '';
+        selectedCategoryId.value = -1;
+      }
     };
 
     /**
@@ -179,9 +221,11 @@ export default {
         },
       });
     };
-
+    // 데이터 요청
     getBoards(currentPageNum.value);
+    getBoardsCount();
     getCategoryList();
+    getPageSize();
 
     return {
       boardList,
@@ -192,11 +236,11 @@ export default {
       endDate,
       numOfPages,
       currentPageNum,
+      selectedCategoryId,
       getBoards,
       goToView,
       goToWrite,
       parseStringFormat,
-      selectedCategoryId,
     };
   },
 };
