@@ -4,7 +4,7 @@
     <span>글쓴이</span>
     <p>{{ board.userName }}</p>
     <span>등록일시</span>
-    <p>{{ parseFormat(board.createdAt) }}</p>
+    <p>{{ parseFormat(board.createdAt, 'YYYY-MM-DD HH:mm') }}</p>
     <span>수정일시</span>
     <p v-if="board.editedAt != null">
       {{ parseFormat(board.editedAt, 'YYYY-MM-DD HH:mm') }}
