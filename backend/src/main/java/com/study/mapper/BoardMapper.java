@@ -1,7 +1,7 @@
 package com.study.mapper;
 
 import com.study.condition.BoardSelectCondition;
-import com.study.dto.BoardCategoryNameDTO;
+import com.study.dto.BoardCategoryFileDTO;
 import com.study.dto.BoardDTO;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -17,7 +17,7 @@ public interface BoardMapper {
      * @param boardSelectCondition
      * @return
      */
-    List<BoardCategoryNameDTO> getBoardList(BoardSelectCondition boardSelectCondition);
+    List<BoardCategoryFileDTO> getBoardList(BoardSelectCondition boardSelectCondition);
 
     /**
      * 검색조건에 따른 전체 Board rowcount 가져오기
