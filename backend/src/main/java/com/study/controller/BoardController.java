@@ -7,7 +7,7 @@ import com.study.condition.BoardSelectCondition;
 import com.study.condition.SearchCondition;
 import com.study.dto.BoardDTO;
 import com.study.exception.BoardNotFoundException;
-import com.study.returntpye.BoardSearchConditionCount;
+import com.study.dto.BoardSearchConditionDTO;
 import com.study.service.BoardService;
 import com.study.service.CategoryService;
 import com.study.service.CommentService;
@@ -17,6 +17,7 @@ import com.study.utils.StringUtils;
 import com.study.validate.Validator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,6 +32,8 @@ import java.io.IOException;
 @RequestMapping("/api")
 @Slf4j
 public class BoardController {
+    @Value("#{pagination['pagination.pageSize']}")
+    private int pageSize;
     private final BoardService boardService;
     private final CategoryService categoryService;
     private final FileService fileService;
@@ -52,14 +55,13 @@ public class BoardController {
      * @return
      */
     @GetMapping("/boards")
-    public ResponseEntity<BoardSearchConditionCount> getBoardList(SearchCondition searchCondition, @RequestParam(defaultValue = "1") int pageNum) {
+    public ResponseEntity<BoardSearchConditionDTO> getBoardList(SearchCondition searchCondition, @RequestParam(defaultValue = "1") int pageNum) {
         // 처음 /boards/free/list 검색 조건 설정
         if (StringUtils.isSearchConditionNull(searchCondition)) {
             searchCondition = new SearchCondition();
         }
 
         // 페이지네이션 정보 설정
-        int pageSize = 2;
         int startRow = (pageNum - 1) * pageSize;
 
         // boardSelectCondition 설정
@@ -72,14 +74,38 @@ public class BoardController {
                 .startRow(startRow)
                 .build();
 
+
         // 필요한 정보 가져오기
-        BoardSearchConditionCount boardSearchConditionCount = BoardSearchConditionCount.builder()
+        BoardSearchConditionDTO boardSearchConditionDTO = BoardSearchConditionDTO.builder()
                 .searchCondition(searchCondition)
                 .boardList(boardService.getBoardList(boardSelectCondition))
-                .countRow(boardService.getBoardCount(boardSelectCondition))
                 .build();
 
-        return new ResponseEntity<>(boardSearchConditionCount,HttpStatus.OK);
+        return new ResponseEntity<>(boardSearchConditionDTO,HttpStatus.OK);
+    }
+
+    /**
+     * 페이지네이션 상관없이 게시물 수 요청
+     * @param searchCondition
+     * @return
+     */
+    @GetMapping("/boards/count")
+    public ResponseEntity<Integer> getBoardsCount(SearchCondition searchCondition){
+        // 처음 /boards/free/list 검색 조건 설정
+        if (StringUtils.isSearchConditionNull(searchCondition)) {
+            searchCondition = new SearchCondition();
+        }
+
+        BoardSelectCondition boardSelectCondition = BoardSelectCondition.builder()
+                .startDate(StringUtils.parseToTimestampStart(searchCondition.getStartDate()))
+                .endDate(StringUtils.parseToTimestampEnd(searchCondition.getEndDate()))
+                .categoryId(searchCondition.getCategoryId())
+                .searchText(searchCondition.getSearchText())
+                .build();
+
+        int count = boardService.getBoardCount(boardSelectCondition);
+
+        return new ResponseEntity<>(count,HttpStatus.OK);
     }
 
     /**
