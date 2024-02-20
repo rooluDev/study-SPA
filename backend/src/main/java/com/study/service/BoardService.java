@@ -1,13 +1,13 @@
 package com.study.service;
 
 import com.study.condition.BoardSelectCondition;
-import com.study.dto.BoardCategoryFileDTO;
-import com.study.dto.BoardDTO;
+import com.study.dto.BoardDto;
 import com.study.exception.BoardNotFoundException;
 import com.study.mapper.BoardMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -23,25 +23,23 @@ public class BoardService {
     }
 
     /**
-     * 게시물 찾기
+     * 게시물 with Category Name 찾기
      * @param boardId
      * @return
      */
-    public BoardDTO findBoard(long boardId) throws BoardNotFoundException {
-        BoardDTO boardDTO = boardMapper.findById(boardId);
-        if(boardDTO == null){
-            throw new BoardNotFoundException("No board in DB");
-        }
-        return boardDTO;
+    public BoardDto findBoard(long boardId) throws BoardNotFoundException {
+        return boardMapper.findById(boardId).orElseThrow(() -> new BoardNotFoundException());
     }
 
     /**
-     * 검색조건에 따라 게시물들 찾기
+     * 검색조건에 따라 게시물 with CategoryName List 찾기
+     *
      * @param boardSelectCondition
      * @return
      */
-    public List<BoardCategoryFileDTO> getBoardList(BoardSelectCondition boardSelectCondition){
-        return boardMapper.getBoardList(boardSelectCondition);
+    public List<BoardDto> getBoardList(BoardSelectCondition boardSelectCondition){
+        List<BoardDto> boardCategoryFileDtoList = boardMapper.getBoardList(boardSelectCondition);
+        return boardCategoryFileDtoList != null ? boardCategoryFileDtoList : Collections.emptyList();
     }
 
     /**
@@ -58,31 +56,31 @@ public class BoardService {
      * @param board
      * @return
      */
-    public void addBoard(BoardDTO board){
-        boardMapper.createBoard(board);
+    public int addBoard(BoardDto board){
+        return boardMapper.createBoard(board);
     }
 
     /**
      * 게시물 조회수 증가
      * @param boardId
      */
-    public void increaseView(Long boardId){
-        boardMapper.updateView(boardId);
+    public int increaseView(Long boardId){
+        return boardMapper.updateView(boardId);
     }
 
     /**
      * 게시물 삭제
      * @param boardId
      */
-    public void deleteBoardById(Long boardId){
-        boardMapper.deleteById(boardId);
+    public int deleteBoardById(Long boardId){
+        return boardMapper.deleteById(boardId);
     }
 
     /**
      * 게시물 수정
      * @param board
      */
-    public void updateBoard(BoardDTO board){
-        boardMapper.updateBoard(board);
+    public int updateBoard(BoardDto board){
+        return boardMapper.updateBoard(board);
     }
 }
