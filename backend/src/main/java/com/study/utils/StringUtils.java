@@ -1,6 +1,6 @@
 package com.study.utils;
 
-import com.study.condition.SearchCondition;
+import com.study.dto.BoardSearchFormDto;
 
 import java.sql.Timestamp;
 import java.time.LocalDate;
@@ -54,11 +54,11 @@ public class StringUtils {
 
     /**
      * 처음 검색 조건에서 공백으로 넘어오는거 체크
-     * @param searchCondition
+     * @param boardSearchFormDto
      * @return
      */
-    public static boolean isSearchConditionNull(SearchCondition searchCondition){
-        if(isNull(searchCondition.getSearchText()) || isNull(searchCondition.getEndDate())|| isNull(searchCondition.getStartDate())){
+    public static boolean isBoardFormNull(BoardSearchFormDto boardSearchFormDto){
+        if(isNull(boardSearchFormDto.getSearchText()) || isNull(boardSearchFormDto.getEndDate())|| isNull(boardSearchFormDto.getStartDate())){
             return true;
         }
         return false;
