@@ -1,6 +1,6 @@
 package com.study.validate;
 
-import com.study.dto.BoardDTO;
+import com.study.dto.BoardDto;
 import com.study.exception.IllegalLengthException;
 import com.study.exception.NoSelectedException;
 import com.study.exception.PasswordIncorrectException;
@@ -22,7 +22,7 @@ public class Validator {
      * @param passwordCheck
      * @return
      */
-    public static void validateBoardInput(BoardDTO boardDTO, String passwordCheck) throws Exception {
+    public static void validateBoardInput(BoardDto boardDTO, String passwordCheck) throws Exception {
         validateCategory(boardDTO.getCategoryId());
         validateContent(boardDTO.getContent());
         validatePassword(boardDTO.getPassword());
