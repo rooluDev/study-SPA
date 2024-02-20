@@ -4,6 +4,7 @@ import com.study.dto.FileDto;
 import com.study.exception.FileNotFoundException;
 import com.study.mapper.FileMapper;
 import com.study.repository.FileServerRepository;
+import com.study.repository.SaveFileRepository;
 import com.study.utils.MultipartFileUtils;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,12 +25,12 @@ public class FileService {
     @Value("#{file['file.path']}")
     private String path;
     private final FileMapper fileMapper;
-    private final FileServerRepository fileServerRepository;
+    private final SaveFileRepository saveFileRepository;
 
     @Autowired
     public FileService(FileMapper fileMapper, FileServerRepository fileServerRepository) {
         this.fileMapper = fileMapper;
-        this.fileServerRepository = fileServerRepository;
+        this.saveFileRepository = fileServerRepository;
     }
 
     /**
@@ -67,7 +68,7 @@ public class FileService {
                             .build();
 
                     // Server 저장
-                    fileServerRepository.createFile(file.toFileDto(),multipartFile);
+                    saveFileRepository.createFile(file.toFileDto(),multipartFile);
 
                     // File DB Add
                     fileMapper.createFile(file);
