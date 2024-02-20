@@ -3,14 +3,14 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.study.mapper.CategoryMapper">
-    <select id="getCategoryList" resultType="com.study.dto.CategoryDTO">
+    <select id="getCategoryList" resultType="com.study.entity.Category">
         SELECT
             *
         FROM
             tb_category;
     </select>
 
-    <select id="findById" parameterType="Long" resultType="com.study.dto.CategoryDTO">
+    <select id="findById" parameterType="Long" resultType="com.study.entity.Category">
         SELECT
             *
         FROM
