@@ -1,9 +1,11 @@
 package com.study.mapper;
 
-import com.study.dto.FileDTO;
+import com.study.dto.FileDto;
+import com.study.entity.File;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
+import java.util.Optional;
 
 @Mapper
 public interface FileMapper {
@@ -12,30 +14,30 @@ public interface FileMapper {
      * @param boardId
      * @return
      */
-    List<FileDTO> findByBoardId(Long boardId);
+    List<File> findByBoardId(Long boardId);
 
     /**
      * File Create
      * @param file
      */
-    void createFile(FileDTO file);
+    int createFile(File file);
 
     /**
      * board의 파일 삭제
      * @param boardId
      */
-    void deleteByBoardId(Long boardId);
+    int deleteByBoardId(Long boardId);
 
     /**
      * pk로 파일 찾기
      * @param fileId
      * @return
      */
-    FileDTO findById(Long fileId);
+    Optional<File> findByFileId(Long fileId);
 
     /**
      * pk로 파일 삭제
      * @param fileId
      */
-    void deleteById(Long fileId);
+    int deleteById(Long fileId);
 }
