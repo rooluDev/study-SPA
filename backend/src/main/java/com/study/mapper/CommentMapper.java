@@ -1,6 +1,8 @@
 package com.study.mapper;
 
-import com.study.dto.CommentDTO;
+import com.study.dto.CommentCreateFormDto;
+import com.study.dto.CommentDto;
+import com.study.entity.Comment;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -13,19 +15,19 @@ public interface CommentMapper {
      * @param boardId
      * @return
      */
-    List<CommentDTO> findByBoardId(Long boardId);
+    List<Comment> findByBoardId(Long boardId);
 
     /**
      * 댓글 등록
-     * @param boardId
-     * @param comment
+     *
+     * @param commentCreateFormDto
      */
-    void createComment(@Param("boardId") Long boardId, @Param("comment") String comment);
+    int createComment(CommentCreateFormDto commentCreateFormDto);
 
     /**
      * boardId가 일치하는 댓글 삭제
      * @param boardId
      */
-    void deleteByBoardId(Long boardId);
+    int deleteByBoardId(Long boardId);
 
 }
