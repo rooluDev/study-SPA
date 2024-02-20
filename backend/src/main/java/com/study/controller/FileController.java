@@ -1,6 +1,6 @@
 package com.study.controller;
 
-import com.study.dto.FileDTO;
+import com.study.dto.FileDto;
 import com.study.service.FileService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,55 +29,54 @@ public class FileController {
     private final FileService fileService;
 
     @Autowired
-    public FileController(FileService fileService){
+    public FileController(FileService fileService) {
         this.fileService = fileService;
     }
 
     /**
-     * 파일 다운로드
+     * 첨부파일 클릭 시 파일 다운로드
+     *
      * @param fileId
      * @return
      * @throws IOException
      */
     @GetMapping("/file/{fileId}/download")
-    public ResponseEntity<Resource> downloadFile(@PathVariable Long fileId){
-        try {
-            // 파일 정보 가져오기
-            FileDTO file = fileService.findOne(fileId);
-            // 파일 정보 설정
-            String filePathString = file.getFilePath() + file.getPhysicalName() + "." + file.getExtension();
-            File filePath = Paths.get(filePathString).toFile();
-            Resource resource = new InputStreamResource(Files.newInputStream(filePath.toPath()));
+    public ResponseEntity<Resource> downloadFile(@PathVariable Long fileId) throws Exception {
+        // 파일 정보 가져오기
+        FileDto file = fileService.findByFileId(fileId);
 
-            return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filePath.getName() + "\"")
-                    .body(resource);
-        }catch (FileNotFoundException e){
-            log.error(e.getMessage());
-            return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
-        }catch (Exception e){
-            log.error(e.getMessage());
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        // 파일 정보 설정
+        String filePathString = file.getFilePath() + file.getPhysicalName() + "." + file.getExtension();
+        File filePath = Paths.get(filePathString).toFile();
+        Resource resource = new InputStreamResource(Files.newInputStream(filePath.toPath()));
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filePath.getName() + "\"")
+                .body(resource);
     }
 
+    /**
+     * 게시물에 첨부되어있는 파일 리스트 요청
+     *
+     * @param boardId
+     * @return
+     */
     @GetMapping("/files/{boardId}")
-    public ResponseEntity<List<FileDTO>> getFileList(@PathVariable Long boardId){
-        List<FileDTO> fileList = fileService.getFiles(boardId);
-        return new ResponseEntity<>(fileList,HttpStatus.OK);
+    public ResponseEntity<List<FileDto>> getFileList(@PathVariable Long boardId) {
+        List<FileDto> fileList = fileService.findFileListByBoardId(boardId);
+        return ResponseEntity.status(HttpStatus.OK).body(fileList);
     }
 
     /**
      * 파일 삭제
+     *
      * @param fileId
      * @return
      */
     @DeleteMapping("/file/{fileId}")
-    public ResponseEntity<String> deleteFile(@PathVariable Long fileId){
-        fileService.deleteFileById(fileId);
-        return new ResponseEntity<>("success",HttpStatus.NO_CONTENT);
+    public ResponseEntity<String> deleteFile(@PathVariable Long fileId) {
+        fileService.deleteFileByFileId(fileId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).body("success");
     }
-
-
 }
