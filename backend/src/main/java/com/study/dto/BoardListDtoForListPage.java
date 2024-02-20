@@ -1,6 +1,5 @@
 package com.study.dto;
 
-import com.study.condition.SearchCondition;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,7 +12,8 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
-public class BoardSearchConditionDTO {
-    private List<BoardCategoryFileDTO> boardList;
-    private SearchCondition searchCondition;
+public class BoardListDtoForListPage {
+    private int totalCount;
+    private BoardSearchFormDto searchCondition;
+    private List<BoardDto> boardList;
 }
