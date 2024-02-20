@@ -3,7 +3,7 @@ package com.study.exception;
 /**
  * password 불일치 Exception
  */
-public class PasswordIncorrectException extends Exception{
+public class PasswordIncorrectException extends RuntimeException{
     public PasswordIncorrectException() {
     }
 

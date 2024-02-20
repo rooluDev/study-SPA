@@ -3,7 +3,7 @@ package com.study.exception;
 /**
  * 잘못된 pk로 파일 찾을 때
  */
-public class FileNotFoundException extends Exception{
+public class FileNotFoundException extends RuntimeException{
     public FileNotFoundException() {
     }
 

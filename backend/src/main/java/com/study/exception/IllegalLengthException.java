@@ -3,7 +3,7 @@ package com.study.exception;
 /**
  * Input data가 최소 글자 및 최대 글자 조건 불충족시
  */
-public class IllegalLengthException extends Exception{
+public class IllegalLengthException extends RuntimeException{
     public IllegalLengthException() {
     }
 
