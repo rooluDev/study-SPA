@@ -15,7 +15,7 @@ import java.sql.Timestamp;
 public class BoardSelectCondition {
     private Timestamp startDate;
     private Timestamp endDate;
-    private int categoryId;
+    private Long categoryId;
     private String searchText;
     private int pageSize;
     private int startRow;
