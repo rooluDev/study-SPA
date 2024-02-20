@@ -13,10 +13,8 @@ import java.sql.Timestamp;
 @Getter
 @Setter
 @Builder
-public class CommentDTO {
+public class CommentDto {
     private Long commentId;
-    private Long boardId;
     private String comment;
     private Timestamp createdAt;
-    private Timestamp editedAt;
 }
