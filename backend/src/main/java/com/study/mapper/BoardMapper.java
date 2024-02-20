@@ -1,11 +1,12 @@
 package com.study.mapper;
 
 import com.study.condition.BoardSelectCondition;
-import com.study.dto.BoardCategoryFileDTO;
-import com.study.dto.BoardDTO;
+import com.study.dto.BoardDto;
+import com.study.entity.Board;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Board mapper
@@ -17,7 +18,7 @@ public interface BoardMapper {
      * @param boardSelectCondition
      * @return
      */
-    List<BoardCategoryFileDTO> getBoardList(BoardSelectCondition boardSelectCondition);
+    List<BoardDto> getBoardList(BoardSelectCondition boardSelectCondition);
 
     /**
      * 검색조건에 따른 전체 Board rowcount 가져오기
@@ -27,33 +28,33 @@ public interface BoardMapper {
     int getBoardCount(BoardSelectCondition boardSelectCondition);
 
     /**
-     * pk로 board 데이터 가져오기
+     * pk로 board 데이터와 카테고리 이름 가져오기
      * @param boardId
      * @return
      */
-    BoardDTO findById(Long boardId);
+    Optional<BoardDto> findById(Long boardId);
 
     /**
      * board 추가
      * @param boardDTO
      */
-    void createBoard(BoardDTO boardDTO);
+    int createBoard(BoardDto boardDTO);
 
     /**
      * view 1 증가
      * @param boardId
      */
-    void updateView(Long boardId);
+    int updateView(Long boardId);
 
     /**
      * pk로 board 삭제
      * @param boardId
      */
-    void deleteById(Long boardId);
+    int deleteById(Long boardId);
 
     /**
      * board update
      * @param board
      */
-    void updateBoard(BoardDTO board);
+    int updateBoard(BoardDto board);
 }
