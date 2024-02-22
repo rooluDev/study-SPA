@@ -58,7 +58,7 @@ public class StringUtils {
      * @return
      */
     public static boolean isBoardFormNull(BoardSearchFormDto boardSearchFormDto){
-        if(isNull(boardSearchFormDto.getSearchText()) || isNull(boardSearchFormDto.getEndDate())|| isNull(boardSearchFormDto.getStartDate())){
+        if(isNull(boardSearchFormDto.getEndDate())|| isNull(boardSearchFormDto.getStartDate())){
             return true;
         }
         return false;
