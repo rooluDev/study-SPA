@@ -3,6 +3,7 @@ package com.study.controller;
 
 import com.study.condition.BoardSelectCondition;
 import com.study.dto.*;
+import com.study.exception.PasswordIncorrectException;
 import com.study.service.BoardService;
 import com.study.service.CommentService;
 import com.study.service.FileService;
@@ -47,7 +48,6 @@ public class BoardController {
      */
     @GetMapping("/boards")
     public ResponseEntity<BoardListDtoForListPage> getBoardList(@ModelAttribute BoardSearchFormDto boardSearchFormDto) {
-        // TODO : global exception handler -> parseException or SQLException
         // TODO : categoryList 필요? 아님 따로 요청
         // /boards/free/list no param
         if (StringUtils.isBoardFormNull(boardSearchFormDto)) {
@@ -104,7 +104,7 @@ public class BoardController {
      * @throws Exception
      */
     @PostMapping("/board")
-    public ResponseEntity<String> uploadBoard(@RequestBody BoardCreateFormDto boardCreateFormDto) throws Exception {
+    public ResponseEntity<String> uploadBoard(@ModelAttribute BoardCreateFormDto boardCreateFormDto) throws Exception {
         // 저장할 Board DTO 생성
         BoardDto boardDTO = BoardDto.builder()
                 .categoryId(boardCreateFormDto.getCategoryId())
@@ -138,14 +138,14 @@ public class BoardController {
      */
     // /board/id/check-password -> 객체 생성시 멤버변수 password 하나 -> id와 password로 바꿈
     @PostMapping("/board/check-password")
-    public ResponseEntity<String> checkPassword(@RequestBody PasswordCheckDto passwordCheckDto) throws Exception {
+    public ResponseEntity<String> checkPassword(@RequestBody PasswordCheckDto passwordCheckDto){
         // boardId로 비밀번호 가져오기
         BoardDto boardDTO = boardService.findBoard(passwordCheckDto.getBoardId());
 
         // 비밀번호 확인
         String password = EncryptUtils.encryptPassword(passwordCheckDto.getPassword());
         if (!boardDTO.getPassword().equals(password)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("password incorrect");
+            throw new PasswordIncorrectException();
         }
         return ResponseEntity.status(HttpStatus.ACCEPTED).body("success");
     }
@@ -170,28 +170,26 @@ public class BoardController {
      * 게시물 업데이트
      *
      * @param boardId
-     * @param updateBoard
+     * @param boardUpdateFormDto
      * @return
      *
      */
     @PutMapping("/board/{boardId}")
-    public ResponseEntity<String> updateBoard(@PathVariable Long boardId, @RequestBody BoardUpdateFormDto updateBoard) throws Exception{
+    public ResponseEntity<String> updateBoard(@PathVariable Long boardId, @RequestBody BoardUpdateFormDto boardUpdateFormDto){
+        // boardId 확인
+        boardService.findBoard(boardId);
         // TODO: 유효성 검증
 
         // boardDTO 설정
         BoardDto board = BoardDto.builder()
                 .boardId(boardId)
-                .userName(updateBoard.getUserName())
-                .title(updateBoard.getTitle())
-                .content(updateBoard.getContent())
+                .userName(boardUpdateFormDto.getUserName())
+                .title(boardUpdateFormDto.getTitle())
+                .content(boardUpdateFormDto.getContent())
                 .build();
 
         // 업데이트
-        int a = boardService.updateBoard(board);
-        // 유효한 ID 검증
-        if(a == 0){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("fail");
-        }
+        boardService.updateBoard(board);
 
         return ResponseEntity.status(HttpStatus.OK).body("success");
     }
