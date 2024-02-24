@@ -1,6 +1,8 @@
 package com.study.controller;
 
 import com.study.dto.FileDto;
+import com.study.exception.common.success.ApiResponse;
+import com.study.exception.common.success.SuccessCode;
 import com.study.service.FileService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,9 +64,8 @@ public class FileController {
      * @return
      */
     @GetMapping("/files/{boardId}")
-    public ResponseEntity<List<FileDto>> getFileList(@PathVariable Long boardId) {
-        List<FileDto> fileList = fileService.findFileListByBoardId(boardId);
-        return ResponseEntity.status(HttpStatus.OK).body(fileList);
+    public ApiResponse<List<FileDto>> getFileList(@PathVariable Long boardId) {
+        return new ApiResponse(fileService.findFileListByBoardId(boardId), SuccessCode.SELECT_SUCCESS);
     }
 
     /**
@@ -74,8 +75,8 @@ public class FileController {
      * @return
      */
     @DeleteMapping("/file/{fileId}")
-    public ResponseEntity<String> deleteFile(@PathVariable Long fileId) {
+    public ApiResponse<String> deleteFile(@PathVariable Long fileId) {
         fileService.deleteFileByFileId(fileId);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).body("success");
+        return new ApiResponse("success",SuccessCode.DELETE_SUCCESS);
     }
 }

@@ -2,6 +2,8 @@ package com.study.controller;
 
 
 import com.study.dto.CategoryDto;
+import com.study.exception.common.success.ApiResponse;
+import com.study.exception.common.success.SuccessCode;
 import com.study.service.CategoryService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,8 +36,8 @@ public class CategoryController {
      * @return
      */
     @GetMapping("/categories")
-    public ResponseEntity<List<CategoryDto>> getCategoryList() {
-        return ResponseEntity.status(HttpStatus.OK).body(categoryService.getCategoryList());
+    public ApiResponse<List<CategoryDto>> getCategoryList() {
+        return new ApiResponse(categoryService.getCategoryList(), SuccessCode.SELECT_SUCCESS);
     }
 
     /**
@@ -45,7 +47,7 @@ public class CategoryController {
      * @return
      */
     @GetMapping("/category/{categoryId}")
-    public ResponseEntity<CategoryDto> getCategory(@PathVariable Long categoryId) throws Exception {
-        return ResponseEntity.ok().body(categoryService.findById(categoryId));
+    public ApiResponse<CategoryDto> getCategory(@PathVariable Long categoryId) throws Exception {
+        return new ApiResponse(categoryService.findById(categoryId),SuccessCode.SELECT_SUCCESS);
     }
 }

@@ -2,6 +2,8 @@ package com.study.controller;
 
 import com.study.dto.CommentCreateFormDto;
 import com.study.dto.CommentDto;
+import com.study.exception.common.success.ApiResponse;
+import com.study.exception.common.success.SuccessCode;
 import com.study.service.CommentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -30,8 +32,8 @@ public class CommentController {
      * @return
      */
     @GetMapping("/comment/{boardId}")
-    public ResponseEntity<List<CommentDto>> getCommentList(@PathVariable Long boardId) {
-        return ResponseEntity.status(HttpStatus.OK).body(commentService.getComments(boardId));
+    public ApiResponse<List<CommentDto>> getCommentList(@PathVariable Long boardId) {
+        return new ApiResponse(commentService.getComments(boardId), SuccessCode.SELECT_SUCCESS);
     }
 
     /**
@@ -39,8 +41,8 @@ public class CommentController {
      * @param commentCreateFormDto
      */
     @PostMapping("/comment")
-    public ResponseEntity<String> registerComment(@RequestBody CommentCreateFormDto commentCreateFormDto){
+    public ApiResponse<String> registerComment(@RequestBody CommentCreateFormDto commentCreateFormDto){
         commentService.addComment(commentCreateFormDto);
-        return ResponseEntity.status(HttpStatus.OK).body("success");
+        return new ApiResponse("success",SuccessCode.INSERT_SUCCESS);
     }
 }
