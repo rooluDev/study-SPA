@@ -1,17 +1,17 @@
 <template>
   <h1>게시판 - 보기</h1>
-  <div v-if="board != null && category != null">
+  <div v-if="board != null">
     <span>글쓴이</span>
     <p>{{ board.userName }}</p>
     <span>등록일시</span>
-    <p>{{ parseFormat(board.createdAt, 'YYYY-MM-DD HH:mm') }}</p>
+    <p>{{ parseStringFormat(board.createdAt, 'YYYY-MM-DD HH:mm') }}</p>
     <span>수정일시</span>
     <p v-if="board.editedAt != null">
-      {{ parseFormat(board.editedAt, 'YYYY-MM-DD HH:mm') }}
+      {{ parseStringFormat(board.editedAt, 'YYYY-MM-DD HH:mm') }}
     </p>
     <p v-else>-</p>
     <span>카테고리</span>
-    <p>{{ category.categoryName }}</p>
+    <p>{{ board.categoryName }}</p>
     <span>제목</span>
     <p>{{ board.title }}</p>
     <span>조회수</span>
@@ -23,7 +23,7 @@
       v-if="fileList != null"
       v-for="file in fileList"
       :key="file.fileId"
-      @click="downloadFile(file.fileId)"
+      @click="downloadFile_(file.fileId)"
     >
       {{ file.originalName }}
     </p>
@@ -33,10 +33,10 @@
       v-for="comment in commentList"
       :key="comment.commentId"
     >
-      <p>{{ parseFormat(comment.createdAt, 'YYYY-MM-DD HH:mm') }}</p>
+      <p>{{ parseStringFormat(comment.createdAt, 'YYYY-MM-DD HH:mm') }}</p>
       <p>{{ comment.comment }}</p>
     </div>
-    <form @submit.prevent="registerComment()">
+    <form @submit.prevent="createComment_">
       <input type="text" v-model="comment" />
       <button type="submit">등록</button>
     </form>
@@ -48,15 +48,17 @@
   <div v-show="showDeleteButton">
     <label>비밀번호</label>
     <input type="password" v-model="password" />
-    <button @click="deleteBoard">입력</button>
+    <button @click="deleteBoard_">입력</button>
     <button @click="deleteButton">취소</button>
   </div>
 </template>
 <script>
 import { useRoute, useRouter } from 'vue-router';
-import axios from 'axios';
 import { ref } from 'vue';
-import moment from 'moment/moment';
+import { parseStringFormat } from '@/pages/utils/stringUtils';
+import { getBoard, checkPassword, deleteBoard } from '@/api/boardService';
+import { getFileList, downloadFile } from '@/api/fileService';
+import { getCommentList, createComment } from '@/api/commentService';
 
 export default {
   setup() {
@@ -66,129 +68,79 @@ export default {
     // 검색 조건 쿼리 데이터
     const startDate = route.query.startDate;
     const endDate = route.query.endDate;
-    const categoryId = route.query.category;
+    const categoryId = route.query.categoryId;
     const searchText = route.query.searchText;
     const pageNum = route.query.pageNum;
     // 페이지 사용될 변수들
+    // TODO : Object 설정?
     const board = ref(null);
-    const category = ref(null);
     const commentList = ref([]);
     const fileList = ref([]);
+    // inputData
     const comment = ref('');
-
     const password = ref('');
+    // show button
     const showDeleteButton = ref(false);
 
     /**
      * 게시물 GET요청
      * @returns {Promise<void>}
      */
-    const getBoard = async () => {
+    const getBoard_ = async () => {
       try {
-        const res = await axios.get(`/api/board/${boardId}`);
-        board.value = res.data;
+        const res = await getBoard(boardId, 'view');
+        board.value = res;
       } catch (error) {
-        alert('something is wrong');
-        return;
-      }
-      // 카테고리 가져오기
-      await getCategory(board.value.categoryId);
-    };
-
-    /**
-     * categoryId에 맞는 카테고리 GET 요청
-     * @param categoryId
-     * @returns {Promise<void>}
-     */
-    const getCategory = async (categoryId) => {
-      try {
-        const res = await axios.get(`/api/category/${categoryId}`);
-        category.value = res.data;
-      } catch (error) {
-        alert('something is wrong');
-        return;
+        goToError();
       }
     };
+    getBoard_();
 
     /**
      * 파일 리스트 GET 요청
      * @returns {Promise<void>}
      */
-    const getFileList = async () => {
-      try {
-        const res = await axios.get(`/api/files/${boardId}`);
-        fileList.value = res.data;
-      } catch (error) {
-        alert('something is wrong');
-        return;
-      }
+    const getFileList_ = async () => {
+      const res = await getFileList(boardId);
+      fileList.value = res;
     };
+    getFileList_();
 
     /**
      * 댓글들 GET 요청
      * @returns {Promise<void>}
      */
-    const getCommentList = async () => {
-      try {
-        const res = await axios.get(`/api/comment/${boardId}`);
-        commentList.value = res.data;
-      } catch (error) {
-        alert('something is wrong');
-        return;
-      }
+    const getCommentList_ = async () => {
+      const res = await getCommentList(boardId);
+      commentList.value = res;
     };
+    getCommentList_();
 
     /**
      * 댓글 POST 요청
      * @returns {Promise<void>}
      */
-    const registerComment = async () => {
-      try {
-        await axios.post(`/api/comment`, {
-          boardId: boardId,
-          comment: comment.value,
-        });
-        // 댓글 등록 후 댓글 리스트 가져오기
-        await getCommentList();
-        comment.value = '';
-      } catch (error) {
-        alert('something is wrong');
-        return;
-      }
-    };
-
-    /**
-     * 비밀번호 확인 POST 요청
-     * @returns {Promise<boolean>}
-     */
-    const passwordConfirm = async () => {
-      try {
-        await axios.post(`/api/board/${boardId}/check-password`, {
-          password: password.value,
-        });
-        return true;
-      } catch (error) {
-        alert(error.response.data);
-        password.value = '';
-        return false;
-      }
+    const createComment_ = async () => {
+      await createComment(boardId, comment.value);
+      // 댓글 등록 후 댓글 리스트 가져오기
+      await getCommentList_();
+      // 댓글 입력칸 초기화
+      comment.value = '';
     };
 
     /**
      * 게시물 DELETE 요청
      * @returns {Promise<void>}
      */
-    const deleteBoard = async () => {
-      const res = await passwordConfirm();
-      if (res) {
-        try {
-          await axios.delete(`/api/board/${boardId}`);
-          // 삭제 후 목록 페이지 이동
-          goToList();
-        } catch (error) {
-          alert('something is wrong');
-        }
+    const deleteBoard_ = async () => {
+      const res = await checkPassword(boardId, password.value);
+      if (res.data.status == 400) {
+        alert('password incorrect');
+        return;
       }
+      await deleteBoard(boardId);
+      // 삭제 후 목록 페이지 이동
+      goToList();
     };
 
     /**
@@ -196,53 +148,24 @@ export default {
      * @param fileId
      * @returns {Promise<void>}
      */
-    const downloadFile = async (fileId) => {
-      try {
-        const res = await axios.get(`/api/file/${fileId}/download`, {
-          responseType: 'blob',
-        });
-        let fileName = '';
-        for (let i = 0; i < fileList.value.length; i++) {
-          if (fileList.value[i].fileId == fileId) {
-            fileName = fileList.value[i].originalName;
-          }
+    const downloadFile_ = async (fileId) => {
+      const res = await downloadFile(fileId);
+      let fileName = '';
+
+      for (const file of fileList.value) {
+        if (file.fileId == fileId) {
+          fileName = file.originalName;
         }
-        // download object 설정
-        const url = window.URL.createObjectURL(new Blob([res.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `${fileName}`);
-        document.body.appendChild(link);
-
-        link.click();
-        link.remove();
-      } catch (error) {
-        alert('something is wrong');
       }
+      // download object 설정
+      const url = window.URL.createObjectURL(new Blob([res]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${fileName}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
     };
-
-    /**
-     * 조회수 증가 PATCH
-     * @returns {Promise<void>}
-     */
-    const increaseView = async () => {
-      try {
-        await axios.patch(`/api/board/${boardId}/increase-views`);
-      } catch (error) {
-        alert('something is wrong');
-      }
-    };
-
-    /**
-     * string format으로 파싱
-     * @param timestamp
-     * @param format
-     * @returns {string}
-     */
-    const parseFormat = (timestamp, format) => {
-      return moment(timestamp).format(format);
-    };
-
     /**
      * 비밀번호 확인 창
      */
@@ -256,7 +179,7 @@ export default {
         query: {
           startDate: startDate,
           endDate: endDate,
-          category: categoryId,
+          categoryId: categoryId,
           searchText: searchText,
           pageNum: pageNum,
         },
@@ -270,33 +193,33 @@ export default {
           boardId: boardId,
           startDate: startDate,
           endDate: endDate,
-          category: categoryId,
+          categoryId: categoryId,
           searchText: searchText,
           pageNum: pageNum,
         },
       });
     };
 
-    getBoard();
-    getFileList();
-    getCommentList();
-    increaseView();
+    const goToError = () => {
+      router.push({
+        name: 'Error',
+      });
+    };
 
     return {
       board,
-      category,
       commentList,
       fileList,
       comment,
       password,
       showDeleteButton,
       goToList,
-      parseFormat,
-      registerComment,
-      deleteBoard,
+      parseStringFormat,
+      createComment_,
+      deleteBoard_,
       goToModify,
       deleteButton,
-      downloadFile,
+      downloadFile_,
     };
   },
 };

@@ -1,9 +1,9 @@
 <template>
   <h1>자유 게시판 - 목록</h1>
-  <form @submit.prevent="getBoards(currentPageNum)">
-    <input type="date" v-model="startDate" />
-    <input type="date" v-model="endDate" />
-    <select v-model="selectedCategoryId">
+  <form @submit.prevent="getBoards(searchCondition.pageNum)">
+    <input type="date" v-model="searchCondition.startDate" />
+    <input type="date" v-model="searchCondition.endDate" />
+    <select v-model="searchCondition.categoryId">
       <option value="-1">전체 카테고리</option>
       <option
         v-for="category in categoryList"
@@ -13,7 +13,7 @@
         {{ category.categoryName }}
       </option>
     </select>
-    <input type="text" v-model="searchText" required />
+    <input type="text" v-model="searchCondition.searchText" required />
     <button type="submit">검색</button>
   </form>
 
@@ -56,135 +56,56 @@
 
 <script>
 import { ref, computed } from 'vue';
-import axios from 'axios';
 import { useRoute, useRouter } from 'vue-router';
-import moment from 'moment';
+import { getBoardList } from '@/api/boardService';
+import { getCategoryList } from '@/api/categoryService';
+import { parseStringFormat } from '@/pages/utils/stringUtils';
 
 export default {
   setup() {
     // router
     const router = useRouter();
+    const route = useRoute();
     // 페이지에 사용될 변수들
     const boardList = ref([]);
-    const categoryList = ref([]);
     const boardCount = ref(0);
+    const categoryList = ref([]);
     // 검색 조건
-    const startDate = ref(useRoute().query.startDate);
-    const endDate = ref(useRoute().query.endDate);
-    const searchText = ref(useRoute().query.searchText);
-    const selectedCategoryId = ref(useRoute().query.category);
-    // 현제 페이지
-    const currentPageNum = ref(useRoute().query.pageNum);
+    const searchCondition = ref({
+      startDate: route.query.startDate || '',
+      endDate: route.query.endDate || '',
+      categoryId: Number(route.query.category) || -1,
+      searchText: route.query.searchText || '',
+      pageNum: Number(route.query.pageNum) || 1,
+    });
+
     // 페이지네이션
-    const pageSize = ref(-1);
+    const pageSize = ref(10);
     const numOfPages = computed(() => {
-      if (pageSize.value < 0) {
-        return;
-      }
       return Math.ceil(boardCount.value / pageSize.value);
     });
 
     /**
-     * 검색조건에 따른 게시물 리스트 GET요청
-     * @param page
-     * @returns {Promise<void>}
+     * 페이지에 사용 될 boardList 가져오기
+     * @param pageNum
      */
-    const getBoards = async (page = 1) => {
-      // 현재 페이지 설정
-      currentPageNum.value = page;
-      // 처음 요청 시 데이터 설정
-      initSearchCondition();
-
-      try {
-        // board 요청
-        const res = await axios.get(
-          `/api/boards?startDate=${startDate.value}&endDate=${endDate.value}&categoryId=${selectedCategoryId.value}&searchText=${searchText.value}&pageNum=${currentPageNum.value}`,
-        );
-        // 데이터 설정
-        boardList.value = res.data.boardList;
-        startDate.value = res.data.searchCondition.startDate;
-        endDate.value = res.data.searchCondition.endDate;
-        selectedCategoryId.value = res.data.searchCondition.categoryId;
-        searchText.value = res.data.searchCondition.searchText;
-      } catch (error) {
-        // 에러
-        alert('something is wrong');
-        return;
-      }
+    const getBoards = async (pageNum) => {
+      searchCondition.value.pageNum = pageNum;
+      const res = await getBoardList(searchCondition.value, pageSize.value);
+      searchCondition.value = res.searchCondition;
+      boardCount.value = res.totalCount;
+      boardList.value = res.boardList;
     };
+    getBoards(searchCondition.value.pageNum);
 
     /**
-     * 페이지네이션 상관없이 게시물 총 수 GET요청
-     * @returns {Promise<void>}
+     * 검색창에 사용 될 CategoryList 가죠오기
      */
-    const getBoardsCount = async () => {
-      // 처음 요청 시
-      initSearchCondition();
-      try {
-        const res = await axios.get(
-          `/api/boards/count?startDate=${startDate.value}&endDate=${endDate.value}&categoryId=${selectedCategoryId.value}&searchText=${searchText.value}`,
-        );
-        boardCount.value = res.data;
-      } catch (error) {
-        alert('something is wrong');
-        return;
-      }
+    const getCategories = async () => {
+      const res = await getCategoryList();
+      categoryList.value = res;
     };
-
-    /**
-     * pageSize GET요청
-     * @returns {Promise<void>}
-     */
-    const getPageSize = async () => {
-      try {
-        const res = await axios.get('/api/pageSize');
-        pageSize.value = res.data;
-      } catch (error) {
-        alert('something is wrong');
-        return;
-      }
-    };
-
-    /**
-     * 검색 조건에 쓰일 카테고리 리스트 GET요청
-     * @returns {Promise<void>}
-     */
-    const getCategoryList = async () => {
-      try {
-        const res = await axios.get('/api/categories');
-        categoryList.value = res.data;
-      } catch (error) {
-        alert('something is wrong');
-        return;
-      }
-    };
-
-    /**
-     * 날짜 데이터 스트링 포맷으로 파싱
-     * @param timestamp
-     * @param format
-     * @returns {string}
-     */
-    const parseStringFormat = (timestamp, format) => {
-      return moment(timestamp).format(format);
-    };
-
-    /**
-     * 처음 요청 시 param이 아무것도 없을 때
-     */
-    const initSearchCondition = () => {
-      if (
-        startDate.value == undefined ||
-        endDate.value == undefined ||
-        searchText.value == undefined ||
-        selectedCategoryId.value == undefined
-      ) {
-        startDate.value = '';
-        endDate.value = '';
-        searchText.value = '';
-        selectedCategoryId.value = -1;
-      }
-    };
+    getCategories();
 
     /**
      * 게시판 - 보기 페이지로 이동
@@ -197,11 +118,17 @@ export default {
           id: boardId,
         },
         query: {
-          startDate: parseStringFormat(startDate.value, 'YYYY-MM-DD'),
-          endDate: parseStringFormat(endDate.value, 'YYYY-MM-DD'),
-          category: selectedCategoryId.value,
-          searchText: searchText.value,
-          pageNum: currentPageNum.value,
+          startDate: parseStringFormat(
+            searchCondition.value.startDate,
+            'YYYY-MM-DD',
+          ),
+          endDate: parseStringFormat(
+            searchCondition.value.endDate,
+            'YYYY-MM-DD',
+          ),
+          categoryId: searchCondition.value.categoryId,
+          searchText: searchCondition.value.searchText,
+          pageNum: searchCondition.value.pageNum,
         },
       });
     };
@@ -213,34 +140,31 @@ export default {
       router.push({
         name: 'Write',
         query: {
-          startDate: parseStringFormat(startDate.value, 'YYYY-MM-DD'),
-          endDate: parseStringFormat(endDate.value, 'YYYY-MM-DD'),
-          category: selectedCategoryId.value,
-          searchText: searchText.value,
-          pageNum: currentPageNum.value,
+          startDate: parseStringFormat(
+            searchCondition.value.startDate,
+            'YYYY-MM-DD',
+          ),
+          endDate: parseStringFormat(
+            searchCondition.value.endDate,
+            'YYYY-MM-DD',
+          ),
+          categoryId: searchCondition.value.categoryId,
+          searchText: searchCondition.value.searchText,
+          pageNum: searchCondition.value.pageNum,
         },
       });
     };
-    // 데이터 요청
-    getBoards(currentPageNum.value);
-    getBoardsCount();
-    getCategoryList();
-    getPageSize();
 
     return {
       boardList,
       categoryList,
       boardCount,
-      searchText,
-      startDate,
-      endDate,
       numOfPages,
-      currentPageNum,
-      selectedCategoryId,
-      getBoards,
+      searchCondition,
       goToView,
       goToWrite,
       parseStringFormat,
+      getBoards,
     };
   },
 };

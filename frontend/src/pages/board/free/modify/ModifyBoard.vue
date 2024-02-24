@@ -1,29 +1,53 @@
 <template>
   <h1>게시판 - 수정</h1>
-  <div v-if="board != null && category != null">
+  <div v-if="board != null">
     <span>카테고리</span>
-    <p>{{ category.categoryName }}</p>
+    <p>{{ board.categoryName }}</p>
     <span>등록일시</span>
-    <p>{{ parseFormat(board.createdAt, 'YYYY-MM-DD HH:mm') }}</p>
+    <p>{{ parseStringFormat(board.createdAt, 'YYYY-MM-DD HH:mm') }}</p>
     <span>수정 일시</span>
     <p v-if="board.editedAt != null">
-      {{ parseFormat(board.editedAt, 'YYYY-MM-DD HH:mm') }}
+      {{ parseStringFormat(board.editedAt, 'YYYY-MM-DD HH:mm') }}
     </p>
     <p v-else>-</p>
     <span>조회수</span>
     <p>{{ board.views }}</p>
-    <form @submit.prevent="updateBoard">
+    <form @submit.prevent="updateBoard_">
       <span>작성자</span>
-      <input type="text" v-model="board.userName" />
+      <input
+        type="text"
+        v-model="board.userName"
+        minlength="3"
+        maxlength="4"
+        required
+      />
       <br />
       <span>비밀번호</span>
-      <input type="password" v-model="password" />
+      <input
+        type="password"
+        v-model="password"
+        minlength="4"
+        maxlength="15"
+        required
+      />
       <br />
       <span>제목</span>
-      <input type="text" v-model="board.title" />
+      <input
+        type="text"
+        v-model="board.title"
+        minlength="4"
+        maxlength="99"
+        required
+      />
       <br />
       <span>내용</span>
-      <input type="text" v-model="board.content" />
+      <input
+        type="text"
+        v-model="board.content"
+        minlength="4"
+        maxlength="1999"
+        required
+      />
       <br />
       <span>파일 첨부</span>
       <div v-for="(file, index) in fileList">
@@ -38,24 +62,24 @@
 </template>
 <script>
 import { useRouter, useRoute } from 'vue-router';
-import axios from 'axios';
 import { ref } from 'vue';
-import moment from 'moment/moment';
+import { parseStringFormat } from '@/pages/utils/stringUtils';
+import { getBoard, updateBoard } from '@/api/boardService';
+import { getFileList, deleteFile } from '@/api/fileService';
 
 export default {
   setup() {
     const router = useRouter();
     const route = useRoute();
     // 검색조건 저장
+    const boardId = route.query.boardId;
     const startDate = route.query.startDate;
     const endDate = route.query.endDate;
-    const categoryId = route.query.category;
+    const categoryId = route.query.categoryId;
     const searchText = route.query.searchText;
     const pageNum = route.query.pageNum;
-    const boardId = route.query.boardId;
     // 페이지에 쓰는 데이터 설정
     const board = ref(null);
-    const category = ref(null);
     const fileList = ref([]);
     // input data
     const password = ref('');
@@ -65,96 +89,38 @@ export default {
      * 게시물 데이터 GET
      * @returns {Promise<void>}
      */
-    const getBoard = async () => {
-      try {
-        const res = await axios.get(`/api/board/${boardId}`);
-        // 데이터 설정
-        board.value = res.data;
-        board.value.userName = res.data.userName;
-        board.value.title = res.data.title;
-        board.value.content = res.data.content;
-      } catch (error) {
-        alert('something is wrong');
-      }
-      await getCategory(board.value.categoryId);
+    const getBoard_ = async () => {
+      const res = await getBoard(boardId, 'modify');
+      board.value = res;
     };
-
-    /**
-     * 카테고리 아이디로 카테고리 GET
-     * @param categoryId
-     * @returns {Promise<void>}
-     */
-    const getCategory = async (categoryId) => {
-      try {
-        const res = await axios.get(`/api/category/${categoryId}`);
-        category.value = res.data;
-      } catch (error) {
-        alert('something is wrong');
-      }
-    };
+    getBoard_();
 
     /**
      * 파일 리스트 GET
      * @returns {Promise<void>}
      */
-    const getFileList = async () => {
-      try {
-        const res = await axios.get(`/api/files/${boardId}`);
-        fileList.value = res.data;
-      } catch (error) {
-        alert('something is wrong');
-      }
+    const getFileList_ = async () => {
+      const res = await getFileList(boardId);
+      fileList.value = res;
     };
-
-    /**
-     * 비밀번호 확인 POST
-     * @returns {Promise<boolean>}
-     */
-    const checkPassword = async () => {
-      try {
-        await axios.post(`/api/board/${boardId}/check-password`, {
-          password: password.value,
-        });
-        return true;
-      } catch (error) {
-        alert(error.response.data);
-        password.value = '';
-        return false;
-      }
-    };
+    getFileList_();
 
     /**
      * 게시물 수정 PUT
      * @returns {Promise<void>}
      */
-    const updateBoard = async () => {
-      const res = await checkPassword();
-      try {
-        if (res) {
-          await axios.put(`/api/board/${boardId}`, {
-            userName: board.value.userName,
-            title: board.value.title,
-            content: board.value.content,
-          });
-          // 삭제 할 파일리스트 반복문 돌면서 삭제
-          for (let i = 0; i < deletedFilesList.value.length; i++) {
-            await deleteFile(deletedFilesList.value[i]);
-          }
-          // 게시판 - 보기 페이지 이동
-          goToView();
-        }
-      } catch (error) {
-        alert('something is wrong');
+    const updateBoard_ = async () => {
+      const res = await updateBoard(board.value, password.value);
+      if (res.errorCode) {
+        alert('password incorrect');
+        return;
       }
-    };
-
-    /**
-     * 파일 삭제 DELETE
-     * @param fileId
-     * @returns {Promise<void>}
-     */
-    const deleteFile = async (fileId) => {
-      await axios.delete(`/api/file/${fileId}`);
+      // 삭제 할 파일리스트 반복문 돌면서 삭제
+      for (const file of deletedFilesList.value) {
+        await deleteFile(file.fileId);
+      }
+      // 게시판 - 보기 페이지 이동
+      goToView();
     };
 
     /**
@@ -166,19 +132,6 @@ export default {
       deletedFilesList.value.push(fileId);
       fileList.value.splice(index, 1);
     };
-
-    /**
-     * String format으로 파싱
-     * @param timestamp
-     * @param format
-     * @returns {string}
-     */
-    const parseFormat = (timestamp, format) => {
-      return moment(timestamp).format(format);
-    };
-
-    getBoard();
-    getFileList();
 
     const goToView = () => {
       router.push({
@@ -197,12 +150,11 @@ export default {
     };
     return {
       board,
-      category,
       fileList,
       password,
       goToView,
-      parseFormat,
-      updateBoard,
+      parseStringFormat,
+      updateBoard_,
       selectedFile,
     };
   },
