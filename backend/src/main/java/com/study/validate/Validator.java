@@ -1,6 +1,7 @@
 package com.study.validate;
 
 import com.study.dto.BoardDto;
+import com.study.dto.BoardUpdateFormDto;
 import com.study.exception.IllegalLengthException;
 import com.study.exception.NoSelectedException;
 import com.study.exception.PasswordIncorrectException;
@@ -29,6 +30,18 @@ public class Validator {
         validatePasswordEquals(boardDTO.getPassword(), passwordCheck);
         validateTitle(boardDTO.getTitle());
         validateUserName(boardDTO.getUserName());
+    }
+
+    /**
+     * Board Update Form Data 유효성 검증
+     * @param boardUpdateFormDto
+     * @throws Exception
+     */
+    public static void validateUpdateBoardInput(BoardUpdateFormDto boardUpdateFormDto,String password) throws Exception{
+        validateUserName(boardUpdateFormDto.getUserName());
+        validateTitle(boardUpdateFormDto.getTitle());
+        validateContent(boardUpdateFormDto.getContent());
+        validatePasswordEquals(password, boardUpdateFormDto.getPasswordCheck());
     }
 
     /**
