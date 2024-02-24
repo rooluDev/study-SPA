@@ -1,4 +1,4 @@
-package com.study.exception.common;
+package com.study.exception.common.error;
 
 import lombok.Builder;
 import lombok.Getter;
