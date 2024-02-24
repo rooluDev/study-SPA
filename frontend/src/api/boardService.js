@@ -4,31 +4,35 @@ import axios from 'axios';
  * GET /api/boards/param=
  *
  * @param searchCondition
- * @returns {Promise<any>}
+ * @param pageSize
+ * @returns {Promise<*>}
  */
 export async function getBoardList(searchCondition, pageSize) {
   const res = await axios.get(
-    `/api/boards?startDate=${searchCondition.startDate}&endDate=${searchCondition.endDate}&searchText=${searchCondition.searchText}
-    &categoryId=${searchCondition.categoryId}&pageNum=${searchCondition.pageNum}&pageSize=${pageSize}`,
+    `/api/boards?startDate=${searchCondition.startDate}&endDate=${searchCondition.endDate}&searchText=${searchCondition.searchText}&categoryId=${searchCondition.categoryId}&pageNum=${searchCondition.pageNum}&pageSize=${pageSize}`,
   );
-  return res.data;
+  return res.data.body;
 }
 
 /**
  * GET /api/board/boardId
+ *
  * @param boardId
- * @returns {Promise<axios.AxiosResponse<any>>}
+ * @param option
+ * @returns {Promise<*>}
  */
 export async function getBoard(boardId, option) {
   const res = await axios.get(`/api/board/${boardId}?option=${option}`);
+
   if (res.data.errorCode) {
     throw new Error();
   }
-  return res;
+  return res.data.body;
 }
 
 /**
  * POST /api/board
+ *
  * @param boardFormData
  * @returns {Promise<void>}
  */
@@ -55,38 +59,42 @@ export async function uploadBoard(boardFormData) {
 
 /**
  * POST /api/board/check-password
+ *
  * @param boardId
  * @param password
- * @returns {Promise<any>}
+ * @returns {Promise<*>}
  */
 export async function checkPassword(boardId, password) {
   const res = await axios.post(`/api/board/check-password`, {
     boardId: boardId,
     password: password,
   });
-  return res.data;
+  return res;
 }
 
 /**
  * DELETE /api/board/boardId
+ *
  * @param boardId
  * @returns {Promise<any>}
  */
 export async function deleteBoard(boardId) {
   const res = await axios.delete(`/api/board/${boardId}`);
-  return res.data;
+  return res.data.body;
 }
 
 /**
  * PUT /api/board/boardId
+ *
  * @param board
- * @returns {Promise<any>}
+ * @returns {Promise<*>}
  */
-export async function updateBoard(board) {
+export async function updateBoard(board, inputPassword) {
   const res = await axios.put(`/api/board/${board.boardId}`, {
     userName: board.userName,
     title: board.title,
     content: board.content,
+    passwordCheck: inputPassword,
   });
   return res.data;
 }
