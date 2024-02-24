@@ -4,6 +4,8 @@ package com.study.controller;
 import com.study.condition.BoardSelectCondition;
 import com.study.dto.*;
 import com.study.exception.PasswordIncorrectException;
+import com.study.exception.common.success.ApiResponse;
+import com.study.exception.common.success.SuccessCode;
 import com.study.service.BoardService;
 import com.study.service.CommentService;
 import com.study.service.FileService;
@@ -12,7 +14,6 @@ import com.study.utils.StringUtils;
 import com.study.validate.Validator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,8 +27,6 @@ import java.time.format.DateTimeFormatter;
 @RequestMapping("/api")
 @Slf4j
 public class BoardController {
-    @Value("#{pagination['pagination.pageSize']}")
-    private int pageSize;
     private final BoardService boardService;
     private final FileService fileService;
     private final CommentService commentService;
@@ -47,17 +46,17 @@ public class BoardController {
      * @return
      */
     @GetMapping("/boards")
-    public ResponseEntity<BoardListDtoForListPage> getBoardList(@ModelAttribute BoardSearchFormDto boardSearchFormDto) {
+    public ApiResponse<BoardListDtoForListPage> getBoardList(@ModelAttribute BoardSearchFormDto boardSearchFormDto) {
         // TODO : categoryList 필요? 아님 따로 요청
         // /boards/free/list no param
         if (StringUtils.isBoardFormNull(boardSearchFormDto)) {
             String startDate = LocalDate.now().minusYears(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
             String endDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-            boardSearchFormDto = new BoardSearchFormDto(startDate, endDate, -1L, "", 1);
+            boardSearchFormDto = new BoardSearchFormDto(startDate, endDate, -1L, "", 1,10);
         }
 
         // DB SELECT OFFSET Setting
-        int startRow = (boardSearchFormDto.getPageNum() - 1) * pageSize;
+        int startRow = (boardSearchFormDto.getPageNum() - 1) * boardSearchFormDto.getPageSize();
 
         // boardSelectCondition 설정
         // 만든 이유 : dto에는 로직이 없어야한다. 받아온 String 값을 Timestamp로 변경이 불가 -> 맞는지
@@ -67,7 +66,7 @@ public class BoardController {
                 .endDate(StringUtils.parseToTimestampEnd(boardSearchFormDto.getEndDate()))
                 .categoryId(boardSearchFormDto.getCategoryId())
                 .searchText(boardSearchFormDto.getSearchText())
-                .pageSize(pageSize)
+                .pageSize(boardSearchFormDto.getPageSize())
                 .startRow(startRow)
                 .build();
 
@@ -78,22 +77,25 @@ public class BoardController {
                 .totalCount(boardService.getBoardCount(boardSelectCondition))
                 .build();
 
-        return ResponseEntity.status(HttpStatus.OK).body(boardListDTOForListPage);
+        return new ApiResponse(boardListDTOForListPage,SuccessCode.SELECT_SUCCESS);
     }
 
     /**
      * 게시물 요청
      *
      * @param boardId
+     * @param option
      * @return
      */
     @GetMapping("/board/{boardId}")
-    public ResponseEntity<BoardDto> getBoard(@PathVariable Long boardId) throws Exception {
+    public ApiResponse<BoardDto> getBoard(@PathVariable Long boardId, @RequestParam String option) throws Exception {
         // 필요한 정보 요청
         BoardDto boardDTO = boardService.findBoard(boardId);
-        // 조회수 증가
-        boardService.increaseView(boardId);
-        return ResponseEntity.ok().body(boardDTO);
+        // 조회수 증가 - 보기 페이지
+        if(option.equals("view")){
+            boardService.increaseView(boardId);
+        }
+        return new ApiResponse(boardDTO,SuccessCode.SELECT_SUCCESS);
     }
 
     /**
@@ -104,7 +106,7 @@ public class BoardController {
      * @throws Exception
      */
     @PostMapping("/board")
-    public ResponseEntity<String> uploadBoard(@ModelAttribute BoardCreateFormDto boardCreateFormDto) throws Exception {
+    public ApiResponse<String> uploadBoard(@ModelAttribute BoardCreateFormDto boardCreateFormDto) throws Exception {
         // 저장할 Board DTO 생성
         BoardDto boardDTO = BoardDto.builder()
                 .categoryId(boardCreateFormDto.getCategoryId())
@@ -126,7 +128,7 @@ public class BoardController {
         // File 저장
         fileService.addFile(boardCreateFormDto.getFiles(), boardDTO.getBoardId());
 
-        return ResponseEntity.status(HttpStatus.OK).body("success");
+        return new ApiResponse(boardDTO,SuccessCode.INSERT_SUCCESS);
     }
 
     /**
@@ -138,7 +140,7 @@ public class BoardController {
      */
     // /board/id/check-password -> 객체 생성시 멤버변수 password 하나 -> id와 password로 바꿈
     @PostMapping("/board/check-password")
-    public ResponseEntity<String> checkPassword(@RequestBody PasswordCheckDto passwordCheckDto){
+    public ApiResponse<String> checkPassword(@RequestBody PasswordCheckDto passwordCheckDto){
         // boardId로 비밀번호 가져오기
         BoardDto boardDTO = boardService.findBoard(passwordCheckDto.getBoardId());
 
@@ -147,7 +149,7 @@ public class BoardController {
         if (!boardDTO.getPassword().equals(password)) {
             throw new PasswordIncorrectException();
         }
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body("success");
+        return new ApiResponse("success",SuccessCode.VERIFICATION_SUCCESS);
     }
 
     /**
@@ -157,13 +159,14 @@ public class BoardController {
      * @return
      */
     @DeleteMapping("/board/{boardId}")
-    public ResponseEntity<String> deleteBoard(@PathVariable Long boardId) {
+    public ApiResponse<String> deleteBoard(@PathVariable Long boardId) {
+        // delete에는 body가 없다 -> password를 param으로 넘겨야하는데 비밀번호 유출의 위험 -> ??
         // 삭제
         commentService.deleteByBoardId(boardId);
         fileService.deleteFilesByBoardId(boardId);
         boardService.deleteBoardById(boardId);
 
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).body("success");
+        return new ApiResponse("success",SuccessCode.DELETE_SUCCESS);
     }
 
     /**
@@ -175,7 +178,7 @@ public class BoardController {
      *
      */
     @PutMapping("/board/{boardId}")
-    public ResponseEntity<String> updateBoard(@PathVariable Long boardId, @RequestBody BoardUpdateFormDto boardUpdateFormDto){
+    public ApiResponse<String> updateBoard(@PathVariable Long boardId, @RequestBody BoardUpdateFormDto boardUpdateFormDto) throws Exception{
         // boardId 확인
         String password = boardService.findBoard(boardId).getPassword();
         // 유효성 검증
@@ -191,6 +194,6 @@ public class BoardController {
         // 업데이트
         boardService.updateBoard(board);
 
-        return ResponseEntity.status(HttpStatus.OK).body("success");
+        return new ApiResponse("success",SuccessCode.UPDATE_SUCCESS);
     }
 }
