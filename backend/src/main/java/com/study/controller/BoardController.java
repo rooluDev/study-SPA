@@ -177,9 +177,9 @@ public class BoardController {
     @PutMapping("/board/{boardId}")
     public ResponseEntity<String> updateBoard(@PathVariable Long boardId, @RequestBody BoardUpdateFormDto boardUpdateFormDto){
         // boardId 확인
-        boardService.findBoard(boardId);
-        // TODO: 유효성 검증
-
+        String password = boardService.findBoard(boardId).getPassword();
+        // 유효성 검증
+        Validator.validateUpdateBoardInput(boardUpdateFormDto,password);
         // boardDTO 설정
         BoardDto board = BoardDto.builder()
                 .boardId(boardId)
