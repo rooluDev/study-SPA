@@ -16,4 +16,5 @@ public class BoardSearchFormDto {
     private final Long categoryId;
     private final String searchText;
     private final int pageNum;
+    private final int pageSize;
 }
