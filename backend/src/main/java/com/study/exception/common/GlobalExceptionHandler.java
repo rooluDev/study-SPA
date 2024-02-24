@@ -1,6 +1,8 @@
 package com.study.exception.common;
 
 import com.study.exception.*;
+import com.study.exception.common.error.ErrorCode;
+import com.study.exception.common.error.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
