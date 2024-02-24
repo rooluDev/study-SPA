@@ -10,4 +10,5 @@ public class BoardUpdateFormDto {
     private String userName;
     private String title;
     private String content;
+    private String passwordCheck;
 }
